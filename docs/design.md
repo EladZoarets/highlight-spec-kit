@@ -1,161 +1,80 @@
 # Design: AI Highlight Selector
 
-## 1. Design Goal
+## Design Goal
+Implement a minimal and deterministic highlight selector based on user preference and event scoring.
 
-Translate the spec into a small, self-contained Python implementation that scores game events against a user preference, filters out irrelevant events, and returns the top highlights with a plain-English reason.
+## Architecture
+The solution contains four logical steps:
 
----
+1. Input Parsing
+2. Event Scoring
+3. Sorting and Selection
+4. Explanation Generation
 
-## 2. Architecture
+## System Flow
+Input JSON
+→ score each event
+→ discard score = 0
+→ sort by score descending
+→ generate explanation
+→ return selected highlights
 
-Three logical components, each a plain function:
+## Main Functions
 
-**Event Scoring** — given a single event and a preference, applies the scoring rules and returns a numeric score plus a list of matched rule labels.
+### score_event(event, preference)
+Calculates the score for a single event based on:
+- favorite player match
+- favorite team match
+- event type
 
-**Highlight Selection** — iterates over all events, scores each one, filters out scores of 0, sorts the remainder, and returns the top N.
+Returns:
+- numeric score
+- applied rules
 
-**Explanation Generation** — converts the list of matched rule labels into a single human-readable sentence.
+### generate_reason(applied_rules)
+Creates a short plain-English explanation for why the event was selected.
 
----
+Returns:
+- reason string
 
-## 3. System Flow
+### select_highlights(events, preference)
+Processes all events, filters irrelevant ones, sorts the results, and returns the selected highlights.
 
-```
-events (list)
-    │
-    ▼
-score_event(event, preference)      ← applied per event
-    │
-    ▼
-filter  score == 0                  ← drop irrelevant events
-    │
-    ▼
-sort by score desc, then tie-break
-    │
-    ▼
-take top N
-    │
-    ▼
-generate_reason(event, preference, applied_rules)   ← per highlight
-    │
-    ▼
-highlights (list of {event, score, reason})
-```
+Returns:
+- list of highlights with event, score, and reason
 
----
+## Scoring Logic
+Deterministic additive scoring:
 
-## 4. Main Functions
+- favorite player match = +8
+- favorite team match = +5
+- goal = +4
+- assist = +3
+- card = +1
 
-### `score_event(event, preference) → (int, list[str])`
+## Sorting and Tie-Breaking
+Events are sorted by:
+1. score descending
+2. event type priority
+3. earlier minute
 
-Applies each scoring rule in order and accumulates points.
+Event type priority:
+- goal
+- assist
+- card
 
-- **Input:** a single event dict, a preference dict
-- **Output:** `(total_score, applied_rules)` where `applied_rules` is a list of short labels such as `"favorite player"`, `"goal"`
-- Missing event fields (`player`, `team`) are silently skipped.
+## Error Handling
+- missing player or team fields do not cause failure
+- empty events list returns an empty list
+- empty preference raises ValueError
 
-### `generate_reason(event, preference, applied_rules) → str`
+## Demo Plan
+Use `data/sample_input.json` as input.
+Run the script with:
 
-Builds a plain-English sentence from the applied rule labels.
+`python3 src/highlight_selector.py`
 
-- **Input:** event dict, preference dict, list of rule labels
-- **Output:** a single string, e.g. `"Favorite player scored a goal"`
-- Returns `"No specific reason"` if `applied_rules` is empty (defensive fallback).
-
-### `select_highlights(events, preference) → list[dict]`
-
-Orchestrates the full pipeline.
-
-- **Input:** list of event dicts, preference dict
-- **Output:** list of highlight dicts `{event, score, reason}`, sorted by score desc
-- Raises `ValueError` if `preference` contains neither `favorite_player` nor `favorite_team`.
-- Returns `[]` if `events` is empty or no event scores above 0.
-
----
-
-## 5. Data Structures
-
-**Event input**
-```python
-{
-    "type":   str,   # required — "goal" | "assist" | "card"
-    "player": str,   # optional
-    "team":   str,   # optional
-    "minute": int    # optional
-}
-```
-
-**Preference input**
-```python
-{
-    "favorite_player": str,  # optional
-    "favorite_team":   str   # optional
-    # at least one must be present
-}
-```
-
-**Highlight output**
-```python
-{
-    "event":  dict,  # original event, unchanged
-    "score":  int,   # total score > 0
-    "reason": str    # plain-English explanation
-}
-```
-
----
-
-## 6. Sorting and Tie-Breaking
-
-Primary sort: `score` descending.
-
-When scores are equal:
-1. Prefer `goal` over `assist` over `card` (event type rank).
-2. Prefer the earlier `minute` (lower value wins).
-3. If `minute` is absent, treat it as `999` (pushed to the end among ties).
-
----
-
-## 7. Error Handling
-
-| Situation | Behavior |
-|-----------|----------|
-| `events` is empty | Return `[]` |
-| `preference` has no recognized fields | Raise `ValueError("preference must include favorite_player or favorite_team")` |
-| Event missing `player` or `team` | Skip the corresponding scoring rule; no error |
-| Event has an unrecognized `type` | No type-based points awarded; other rules still apply |
-
----
-
-## 8. Demo Plan
-
-**Sample input file:** `sample_input.json`
-
-```json
-{
-  "events": [
-    { "type": "goal",   "player": "Messi",  "team": "Inter Miami", "minute": 34 },
-    { "type": "assist", "player": "Messi",  "team": "Inter Miami", "minute": 20 },
-    { "type": "card",   "player": "Ramos",  "team": "Al Hilal",    "minute": 67 },
-    { "type": "goal",   "player": "Suarez", "team": "Inter Miami", "minute": 55 }
-  ],
-  "preference": {
-    "favorite_player": "Messi",
-    "favorite_team":   "Inter Miami"
-  }
-}
-```
-
-**Run the demo:**
-```bash
-python demo.py
-```
-
-`demo.py` loads `sample_input.json`, calls `select_highlights(events, preference)`, and prints the results to stdout.
-
-**Expected output** (abbreviated):
-```
-1. [score 17] Messi goal at 34'  — Favorite player, favorite team, goal
-2. [score 16] Messi assist at 20' — Favorite player, favorite team, assist
-3. [score 9]  Suarez goal at 55' — Favorite team, goal
-```
+Validate that:
+- scores match the scoring rules
+- output is sorted correctly
+- each selected highlight includes a reason
