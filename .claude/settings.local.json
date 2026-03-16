@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python src/highlight_selector.py)",
+      "Bash(python3 src/highlight_selector.py)"
+    ]
+  }
+}

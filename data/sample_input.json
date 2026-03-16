@@ -1,0 +1,12 @@
+{
+  "events": [
+    { "type": "goal",   "player": "Messi",  "team": "Inter Miami", "minute": 34 },
+    { "type": "assist", "player": "Messi",  "team": "Inter Miami", "minute": 20 },
+    { "type": "card",   "player": "Ramos",  "team": "Al Hilal",    "minute": 67 },
+    { "type": "goal",   "player": "Suarez", "team": "Inter Miami", "minute": 55 }
+  ],
+  "preference": {
+    "favorite_player": "Messi",
+    "favorite_team":   "Inter Miami"
+  }
+}
