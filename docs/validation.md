@@ -1,4 +1,4 @@
-#   : AI Highlight Selector
+# Validation: AI Highlight Selector
 
 ## Test Run
 
