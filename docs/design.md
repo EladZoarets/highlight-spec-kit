@@ -66,7 +66,7 @@ Event type priority:
 ## Error Handling
 - missing player or team fields do not cause failure
 - empty events list returns an empty list
-- empty preference raises ValueError
+- empty preference falls back to event-type scoring only
 
 ## Demo Plan
 Use `data/sample_input.json` as input.
