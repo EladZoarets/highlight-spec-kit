@@ -23,13 +23,16 @@ Score each game event against the user's preference (favorite player or team) an
 ]
 ```
 
-**User preference** — a JSON object with at least one field:
+**User preference** — a JSON object (all fields optional):
 - `favorite_player` (string, optional)
 - `favorite_team` (string, optional)
 
+If at least one preference field is provided, matching events receive additional score based on the rules in Section 6.
+
+If no preference fields are provided, scoring is based on event type only (no preference boost).
+
 ```json
 { "favorite_player": "Messi" }
-```
 
 ## 4. Outputs
 
@@ -49,9 +52,10 @@ A JSON array sorted by score descending. Events with score 0 are excluded.
 
 - Accept a list of events and a preference object.
 - Score each event using the rules in Section 6.
+- If the preference object includes recognized fields, apply the relevant preference boosts.
+- If the preference object is empty or includes no recognized fields, score events based on event type only.
 - Return only events with score > 0, sorted highest first.
 - Each result includes the original event, its score, and a plain-English reason.
-- Raise `ValueError` if the preference object has no recognized fields.
 
 ## 6. Scoring Rules
 
@@ -76,8 +80,8 @@ Scores are additive. Matching is case-insensitive.
 |------|----------|
 | Empty events list | Return `[]` |
 | No events score above 0 | Return `[]` |
-| Event missing `player` or `team` | Skip that field, no error |
-| Empty preference object | Raise `ValueError` |
+| Event missing `player` or `team` | Ignore missing field, no error |
+| Empty preference object | Score based on event type only (no boost) |
 
 ## 9. Success Criteria
 
@@ -85,4 +89,4 @@ Scores are additive. Matching is case-insensitive.
 - Output is sorted by score, highest first.
 - A goal by the favorite player scores at least 12 (8 + 4).
 - An empty events list returns `[]` without error.
-- An empty preference raises `ValueError`.
+- An empty preference results in scoring based on event type only.

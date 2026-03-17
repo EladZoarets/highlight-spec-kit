@@ -37,8 +37,7 @@ def generate_reason(applied_rules):
 
 def select_highlights(events, preference):
     """Score, filter, sort, and return all highlights with score > 0."""
-    if not (preference.get("favorite_player") or preference.get("favorite_team")):
-        raise ValueError("preference must include favorite_player or favorite_team")
+    preference = preference or {}
 
     scored = []
     for event in events:
